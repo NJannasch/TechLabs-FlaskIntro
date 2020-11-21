@@ -1,0 +1,45 @@
+from flask import Flask, jsonify, request
+import typing
+
+from database import load_data, save_data
+
+app = Flask(__name__)
+my_persons: typing.List = []
+
+@app.route('/persons', methods=['GET'])
+def persons():
+    """ Get all persons """
+
+    return jsonify(my_persons)
+
+@app.route('/persons', methods=['POST'])
+def create_person():
+    """ Create a new person """
+
+    # Check if all fields are available
+    if request.json.get('name') and \
+        request.json.get('location'):
+        my_persons.append(request.json)
+    else:
+        # Data is missing in the request
+        return jsonify({"error": "Data incomplete"}), 400
+
+    save_data('database.json', my_persons)
+    return jsonify(my_persons), 201
+
+@app.route('/persons/<int:number>', methods=['GET'])
+def person_number(number: int):
+    """ Get the first person """
+
+    person: typing.Dict = {}
+
+    if len(my_persons) > number:
+        person = my_persons[number]
+
+    return jsonify(person)
+
+if __name__ == '__main__':
+    # Load dataset before starting the server
+    my_persons = load_data('database.json')
+    
+    app.run(host='0.0.0.0', port=8080, debug=True)
